@@ -2,7 +2,7 @@ import numpy as np
 import sys, os
 sys.path.append(os.pardir)
 from dataset.mnist import load_mnist
-from two_layer_net import TwoLayerNet
+from two_layer_net_forward import TwoLayerNetForward
 
 if __name__ == '__main__':
     (x_train, t_train), (x_test, t_test) = load_mnist(flatten=True, normalize=True, one_hot_label=False)
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     batch_size = 100
     learning_rate = 0.1
 
-    network = TwoLayerNet(input_size=784, hidden_size=50, output_size=10)
+    network = TwoLayerNetForward(input_size=784, hidden_size=50, output_size=10)
 
     for i in range(iters_sum):
         batch_mask = np.random.choice(train_size, batch_size)

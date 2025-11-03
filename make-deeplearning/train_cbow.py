@@ -1,34 +1,55 @@
+# coding: utf-8
 import sys, os
-sys.path.append(os.pardir)
 sys.path.append('..')
+sys.path.append(os.pardir)
+from common import config
+# GPUで実行する場合は、下記のコメントアウトを消去（要cupy）
+# ===============================================
+# config.GPU = True
+# ===============================================
+from common.np import *
+import pickle
 from common.trainer import Trainer
 from common.optimizer import Adam
-from simple_cbow import SimpleCBOW
-from common.util import preprocess, create_contexts_target, convert_one_hot
+from cbow import CBOW
+from skip_gram import SkipGram
+from common.util import create_contexts_target, to_cpu, to_gpu
+from dataset import ptb
 
 
 if __name__ == '__main__':
-    window_size = 1
-    hidden_size = 5
-    batch_size = 3
-    max_epoch = 1000
+    # ハイパーパラメータの設定
+    window_size = 5
+    hidden_size = 100
+    batch_size = 100
+    max_epoch = 10
 
-    text = 'You say goodbye and I say hello.'
-    corpus, word_to_id, id_to_word = preprocess(text)
-
-    contexts, target = create_contexts_target(corpus, window_size=1)
-
+    # データの読み込み
+    corpus, word_to_id, id_to_word = ptb.load_data('train')
     vocab_size = len(word_to_id)
-    target = convert_one_hot(target, vocab_size)
-    contexts = convert_one_hot(contexts, vocab_size)
 
-    model = SimpleCBOW(vocab_size, hidden_size)
+    contexts, target = create_contexts_target(corpus, window_size)
+    if config.GPU:
+        contexts, target = to_gpu(contexts), to_gpu(target)
+
+    # モデルなどの生成
+    model = CBOW(vocab_size, hidden_size, window_size, corpus)
+    # model = SkipGram(vocab_size, hidden_size, window_size, corpus)
     optimizer = Adam()
     trainer = Trainer(model, optimizer)
 
+    # 学習開始
     trainer.fit(contexts, target, max_epoch, batch_size)
-    trainer.plot()
+    trainer.plot(save_file='cbow_train_loss.png') 
 
+    # 後ほど利用できるように、必要なデータを保存
     word_vecs = model.word_vecs
-    for word_id, word in id_to_word.items():
-        print(word, word_vecs[word_id])
+    if config.GPU:
+        word_vecs = to_cpu(word_vecs)
+    params = {}
+    params['word_vecs'] = word_vecs.astype(np.float16)
+    params['word_to_id'] = word_to_id
+    params['id_to_word'] = id_to_word
+    pkl_file = 'cbow_params.pkl'  # or 'skipgram_params.pkl'
+    with open(pkl_file, 'wb') as f:
+        pickle.dump(params, f, -1)

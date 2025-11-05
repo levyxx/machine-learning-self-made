@@ -127,14 +127,14 @@ class RnnlmTrainer:
 
             self.current_epoch += 1
 
-    def plot(self, ylim=None):
+    def plot(self, ylim=None, save_file='train_ppl.png'):
         x = numpy.arange(len(self.ppl_list))
         if ylim is not None:
             plt.ylim(*ylim)
         plt.plot(x, self.ppl_list, label='train')
         plt.xlabel('iterations (x' + str(self.eval_interval) + ')')
         plt.ylabel('perplexity')
-        plt.show()
+        plt.savefig(save_file)
 
 
 def remove_duplicate(params, grads):

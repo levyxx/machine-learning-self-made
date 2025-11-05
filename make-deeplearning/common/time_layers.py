@@ -266,7 +266,7 @@ class TimeLSTM:
     def forward(self, xs):
         Wx, Wh, b = self.params
         N, T, D = xs.shape
-        H = Wx.shape[0]
+        H = Wh.shape[0]  # hidden_sizeはWhの行数
 
         self.layers = []
         hs = np.empty((N, T, H), dtype='f')
@@ -287,7 +287,7 @@ class TimeLSTM:
     def backward(self, dhs):
         Wx, Wh, b = self.params
         N, T, H = dhs.shape
-        D = Wx.shape[0]
+        D = Wx.shape[0]  # 入力次元はWxの行数
 
         dxs = np.empty((N, T, D), dtype='f')
         dh = 0
@@ -308,9 +308,8 @@ class TimeLSTM:
 
         return dxs
     
-    def set_state(self, h, c):
-        self.h = h
-        self.c = c
+    def set_state(self, h, c=None):
+        self.h, self.c = h, c
 
     def reset_state(self):
         self.h = None
